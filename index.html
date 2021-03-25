@@ -1,0 +1,155 @@
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link href="output.css" type="text/css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js" defer></script>
+</head>
+
+<body class="bg-green-200">
+  <div class="flex flex-col justify-center bg-blue-200">
+    <h1 class="ml-24 mt-24 mb-24 font-semibold text-3xl text-blue-500">Pomotomo - <span class="text-xl">Keep track of
+        tasks easily.</span></h1>
+  </div>
+  <div x-data="data" class="mt-4 mb-4">
+    <button @click="signInPopUp()"
+      class="mr-5 ml-5 bg-gray-600 rounded-md px-4 py-2 text-xl font-semibold text-gray-50">Sign in</button>
+    <span>
+      Hello
+    </span>
+    <span x-text="user.email" class="mt-2">
+    </span>
+    <span>
+      !
+    </span>
+  </div>
+  <div x-data="data.time" class="flex justify-center bg-blue-300 p-10">
+    <div class="h-64 w-64 flex flex-col justify-center items-center rounded-full bg-yellow-300">
+      <span class="text-5xl p-10">
+        <span x-text="mins"></span> : <span x-text="secs"></span>
+      </span>
+    </div>
+  </div>
+  <div x-data="data.time" class="flex justify-center bg-blue-400">
+    <div class="flex flex-wrap justify-center p-10">
+      <button @click="startTime()"
+        class="mr-5 ml-5 bg-green-600 rounded-md px-4 py-2 text-xl font-semibold text-gray-50">Start</button>
+      <button @click="stopTime()" class="mr-5 ml-5 bg-red-600 rounded-md px-4 py-2 text-xl font-semibold text-gray-50">Stop</button>
+      <button @click="restartTime()" class="mr-5 ml-5 bg-purple-700 rounded-md px-4 py-2 text-xl font-semibold text-gray-50">Restart</button>
+    </div>
+  </div>
+  <ul class="flex flex-col justify-center mt-10 mb-20">
+    <li class="flex justify-center mt-5">
+      <div class="rounded-sm p-4 bg-red-400 min-w-5xl max-w-5xl">
+        <h1 class="font-semibold">
+          Task 1
+        </h1>
+        <p class="mt-2">
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Veniam maxime ipsam beatae quo sequi commodi
+          exercitationem minima debitis nisi ut, atque ex perspiciatis. Delectus molestiae quod mollitia fuga possimus
+          iusto.
+        </p>
+      </div>
+    </li>
+    <li class="flex justify-center mt-5">
+      <div class="rounded-sm p-4 bg-red-400 min-w-5xl max-w-5xl">
+        <h1 class="font-semibold">
+          Task 2
+        </h1>
+        <p class="mt-2">
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Veniam maxime ipsam beatae quo sequi commodi
+          exercitationem minima debitis nisi ut, atq.
+        </p>
+      </div>
+    </li>
+  </ul>
+  <!-- The core Firebase JS SDK is always required and must be listed first -->
+  <script src="https://www.gstatic.com/firebasejs/8.3.1/firebase-app.js"></script>
+
+  <!-- TODO: Add SDKs for Firebase products that you want to use
+     https://firebase.google.com/docs/web/setup#available-libraries -->
+  <script src="https://www.gstatic.com/firebasejs/8.3.1/firebase-analytics.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.3.1/firebase-auth.js"></script>
+
+  <script>
+    // Your web app's Firebase configuration
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+    var firebaseConfig = {
+      apiKey: "AIzaSyB396V41TH1MOsTMx6Wn8UOwcIceSWDZnE",
+      authDomain: "pomotomo-f9e24.firebaseapp.com",
+      projectId: "pomotomo-f9e24",
+      storageBucket: "pomotomo-f9e24.appspot.com",
+      messagingSenderId: "529600770209",
+      appId: "1:529600770209:web:78428e582e4d7ea67240e0",
+      measurementId: "G-6WQ47SP0TX"
+    };
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    firebase.analytics();
+
+    var provider = new firebase.auth.GoogleAuthProvider();
+
+    var myWorker = window.Worker ? new Worker('worker.js') : console.log("No worker available");
+
+    myWorker.onmessage = (e) => {
+      console.log('Message received from worker: ' + e.data);
+    }
+
+    var data = {
+      user: {
+        email: ""
+      },
+      tasks: [{ title: 'Task 1', description: 'This is some task that I did during a period of time.' }],
+      time: {
+        mins: 12,
+        secs: 15,
+        restPeriod: 10, // Length of rest periods in minutes.
+        workPeriod: 30, // Length of work periods in minutes.
+        startTime: () => {
+          console.log('Start clicked');
+          myWorker.postMessage('start');
+        },
+        stopTime: () => {
+          console.log('Stop clicked');
+          myWorker.postMessage('stop');
+        },
+        restartTime: () => {
+          console.log('Restart clicked. Restarting at ' + this.workPeriod + ' minutes');
+          myWorker.postMessage(this.workPeriod);
+        },
+      },
+      signInPopUp: () => {
+        console.log('Sign in clicked');
+        firebase.auth()
+          .signInWithPopup(provider)
+          .then((result) => {
+            /** @type {firebase.auth.OAuthCredential} */
+            var credential = result.credential;
+
+            // This gives you a Google Access Token. You can use it to access the Google API.
+            var token = credential.accessToken;
+            // The signed-in user info.
+            var user = result.user;
+
+            this.user.email = user.email;
+            console.log('Sign in success');
+          }).catch((error) => {
+            // Handle Errors here.
+            var errorCode = error.code;
+            var errorMessage = error.message;
+            // The email of the user's account used.
+            var email = error.email;
+            // The firebase.auth.AuthCredential type that was used.
+            var credential = error.credential;
+            // ...
+            console.log('Sign in error');
+          });
+      }
+    }
+  </script>
+</body>
+
+</html>
