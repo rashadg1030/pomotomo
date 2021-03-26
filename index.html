@@ -9,12 +9,12 @@
   <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js" defer></script>
 </head>
 
-<body class="bg-green-200">
+<body x-data="$store.pomotomo" class="bg-green-200">
   <div class="flex flex-col justify-center bg-blue-200">
     <h1 class="ml-24 mt-24 mb-24 font-semibold text-3xl text-blue-500">Pomotomo - <span class="text-xl">Keep track of
         tasks easily.</span></h1>
   </div>
-  <div x-data="data" class="mt-4 mb-4">
+  <div class="mt-4 mb-4">
     <button @click="signInPopUp()"
       class="mr-5 ml-5 bg-gray-600 rounded-md px-4 py-2 text-xl font-semibold text-gray-50">Sign in</button>
     <span>
@@ -26,19 +26,21 @@
       !
     </span>
   </div>
-  <div x-data="data.time" class="flex justify-center bg-blue-300 p-10">
-    <div class="h-64 w-64 flex flex-col justify-center items-center rounded-full bg-yellow-300">
+  <div class="flex justify-center bg-blue-300 p-10">
+    <div :class="{ 'bg-yellow-300': time.working, 'bg-pink-300': !time.working }" class="h-64 w-64 flex flex-col justify-center items-center rounded-full">
       <span class="text-5xl p-10">
-        <span x-text="mins"></span> : <span x-text="secs"></span>
+        <span x-text="time.workPeriod - time.mins"></span> : <span x-text="60 - time.secs - 1"></span>
       </span>
     </div>
   </div>
-  <div x-data="data.time" class="flex justify-center bg-blue-400">
+  <div class="flex justify-center bg-blue-400">
     <div class="flex flex-wrap justify-center p-10">
       <button @click="startTime()"
         class="mr-5 ml-5 bg-green-600 rounded-md px-4 py-2 text-xl font-semibold text-gray-50">Start</button>
-      <button @click="stopTime()" class="mr-5 ml-5 bg-red-600 rounded-md px-4 py-2 text-xl font-semibold text-gray-50">Stop</button>
-      <button @click="restartTime()" class="mr-5 ml-5 bg-purple-700 rounded-md px-4 py-2 text-xl font-semibold text-gray-50">Restart</button>
+      <button @click="stopTime()"
+        class="mr-5 ml-5 bg-red-600 rounded-md px-4 py-2 text-xl font-semibold text-gray-50">Stop</button>
+      <button @click="restartTime()"
+        class="mr-5 ml-5 bg-purple-700 rounded-md px-4 py-2 text-xl font-semibold text-gray-50">Restart</button>
     </div>
   </div>
   <ul class="flex flex-col justify-center mt-10 mb-20">
@@ -73,7 +75,7 @@
      https://firebase.google.com/docs/web/setup#available-libraries -->
   <script src="https://www.gstatic.com/firebasejs/8.3.1/firebase-analytics.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.3.1/firebase-auth.js"></script>
-
+  <script src="https://cdn.jsdelivr.net/npm/@ryangjchandler/spruce@2.x.x/dist/spruce.umd.js"></script>
   <script>
     // Your web app's Firebase configuration
     // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -86,6 +88,7 @@
       appId: "1:529600770209:web:78428e582e4d7ea67240e0",
       measurementId: "G-6WQ47SP0TX"
     };
+
     // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     firebase.analytics();
@@ -94,35 +97,29 @@
 
     var myWorker = window.Worker ? new Worker('worker.js') : console.log("No worker available");
 
-    myWorker.onmessage = (e) => {
-      console.log('Message received from worker: ' + e.data);
-    }
-
-    var data = {
+    Spruce.store('pomotomo', {
       user: {
         email: ""
       },
       tasks: [{ title: 'Task 1', description: 'This is some task that I did during a period of time.' }],
       time: {
-        mins: 12,
-        secs: 15,
+        working: true,
         restPeriod: 10, // Length of rest periods in minutes.
         workPeriod: 30, // Length of work periods in minutes.
-        startTime: () => {
-          console.log('Start clicked');
-          myWorker.postMessage('start');
-        },
-        stopTime: () => {
-          console.log('Stop clicked');
-          myWorker.postMessage('stop');
-        },
-        restartTime: () => {
-          console.log('Restart clicked. Restarting at ' + this.workPeriod + ' minutes');
-          myWorker.postMessage(this.workPeriod);
-        },
+        secs: 0, // Seconds ELAPSED
+        mins: 0, // Minutes ELAPSED
       },
-      signInPopUp: () => {
+      startTime: function () {
+        console.log('Start clicked');
+        myWorker.postMessage('start');
+      },
+      stopTime: function () {
+        console.log('Stop clicked');
+        myWorker.postMessage('stop');
+      },
+      signInPopUp: function () {
         console.log('Sign in clicked');
+        var pomotomo = Spruce.store('pomotomo');
         firebase.auth()
           .signInWithPopup(provider)
           .then((result) => {
@@ -134,7 +131,7 @@
             // The signed-in user info.
             var user = result.user;
 
-            this.user.email = user.email;
+            pomotomo.user.email = user.email;
             console.log('Sign in success');
           }).catch((error) => {
             // Handle Errors here.
@@ -147,6 +144,25 @@
             // ...
             console.log('Sign in error');
           });
+      }
+    });
+
+    // const restartTime = () => {
+    //   console.log('Restart clicked. Restarting at ' + data.time.workPeriod + ' minutes');
+    //   myWorker.postMessage('restart');
+    // }
+
+    myWorker.onmessage = (e) => {
+      console.log('Message received from worker: ' + e.data);
+      var pomotomo = Spruce.store('pomotomo');
+      console.log(pomotomo.time.working);
+      if (e.data === 'tick') {
+        if (pomotomo.time.secs == 59) {
+          pomotomo.time.secs = 0;
+          pomotomo.time.mins++;
+        } else {
+          pomotomo.time.secs++;
+        }
       }
     }
   </script>
