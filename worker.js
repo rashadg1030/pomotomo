@@ -58,6 +58,6 @@ onmessage = (e) => {
   } else if (message === 'stop') {
     ticker.stop();
   } else /*the case it's restart*/ {
-
+    console.log('Unknown message');
   }
 }
