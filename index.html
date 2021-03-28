@@ -56,8 +56,8 @@
     <div :class="{ 'bg-yellow-300': time.working, 'bg-pink-300': !time.working }"
       class="h-64 w-64 flex flex-col justify-center items-center rounded-full">
       <span class="text-5xl p-10">
-        <span x-text="$store.pomotomo.currentTask.workPeriod - $store.pomotomo.time.mins"></span> : <span
-          x-text="(60 - time.secs) % 60"></span>
+        <span x-text="$store.pomotomo.time.secs % 60 === 0 ? $store.pomotomo.currentTask.workPeriod - Math.floor($store.pomotomo.time.secs / 60) : $store.pomotomo.currentTask.workPeriod - Math.floor($store.pomotomo.time.secs / 60) - 1"></span> : <span
+          x-text="(60 - ($store.pomotomo.time.secs % 60)) % 60"></span>
       </span>
     </div>
   </div>
@@ -77,9 +77,9 @@
         Todo
       </h1>
       <ul class="flex flex-col justify-center">
-        <template x-for="task in $store.pomotomo.tasks" :key="task">
+        <template x-for="(task, index) in $store.pomotomo.tasks" :key="task">
           <li class="flex justify-center mt-5">
-            <div class="rounded-md p-4 bg-red-400">
+            <div :class="{ 'border-8 border-green-500 border-dashed': index === 0 }" class="rounded-md p-4 bg-red-400">
               <h1 x-text="task.title" class="font-semibold">
               </h1>
               <p x-text="task.desc" class="mt-2">
@@ -94,14 +94,8 @@
         Current
       </h1>
       <div class="mt-5 bg-indigo-400 p-4 rounded-md">
-        <p class="flex justify-center inline-block" x-text="$store.pomotomo.currentTask.title"></p>
-        <p class="flex justify-center inline-block" x-text="$store.pomotomo.currentTask.desc"></p>
-        <span class="flex justify-center inline-block">
-          <p x-text="$store.pomotomo.currentTask.workPeriod"></p> minutes work
-        </span>
-        <span class="flex justify-center inline-block">
-          <p x-text="$store.pomotomo.currentTask.restPeriod"></p> minutes rest
-        </span>
+        <p class="font-semibold" x-text="$store.pomotomo.currentTask.title"></p>
+        <p class="mt-2" x-text="$store.pomotomo.currentTask.desc"></p>
       </div>
     </div>
     <div class="mx-5 mt-10 mb-10">
@@ -186,8 +180,7 @@
       ],
       time: {
         working: true,
-        secs: 0, // Seconds ELAPSED
-        mins: 0, // Minutes ELAPSED
+        secs: 0
       },
       startTime: function () {
         console.log('Start clicked');
@@ -201,7 +194,6 @@
         console.log('Restart clicked. Restarting at ' + this.time.workPeriod + ' minutes');
         myWorker.postMessage('stop');
         this.time.secs = 0;
-        this.time.mins = 0;
       },
       signInPopUp: function () {
         console.log('Sign in clicked');
@@ -238,27 +230,22 @@
       var pomotomo = Spruce.store('pomotomo');
       console.log(pomotomo.time.working);
       if (e.data === 'tick') {
-        if (pomotomo.time.secs == 59) {
-          pomotomo.time.secs = 0;
-          pomotomo.time.mins++;
-        } else {
-          pomotomo.time.secs++;
-        }
-        if (pomotomo.time.working && pomotomo.time.mins === pomotomo.currentTask.workPeriod) {
+        pomotomo.time.secs++;
+        if (pomotomo.time.working && (pomotomo.time.secs / 60) === pomotomo.currentTask.workPeriod) {
           pomotomo.time.working = false;
-          pomotomo.time.mins = 0;
           pomotomo.time.secs = 0;
           console.log('finished work');
-        } else if (!pomotomo.time.working && pomotomo.time.mins === pomotomo.currentTask.restPeriod) {
+        } else if (!pomotomo.time.working && (pomotomo.time.secs / 60) === pomotomo.currentTask.restPeriod) {
           pomotomo.time.working = true;
           pomotomo.done.unshift(pomotomo.currentTask);
           pomotomo.currentTask = pomotomo.tasks.shift();
-          pomotomo.time.mins = 0;
           pomotomo.time.secs = 0;
-          console.log('finished rest')
+          console.log('finished rest');
         }
       }
     }
+
+    Spruce.watch('pomotomo.currentTask', () => myWorker.postMessage('stop'));
   </script>
 </body>
 
