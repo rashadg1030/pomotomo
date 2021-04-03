@@ -26,38 +26,13 @@
       !
     </span>
   </div>
-  <div x-data="{ title: null, desc: null, workPeriod: 0, restPeriod: 0 }" class="flex justify-center bg-indigo-200">
-    <div class="flex flex-col">
-      <div class="mt-4 mb-4">
-        <label for="task-title">Title</label>
-        <input x-model="title" class="ml-3 rounded-md" id="task-title" type="text">
-      </div>
-      <div class="mb-4">
-        <label class="block" for="task-desc">Description</label>
-        <textarea x-model="desc" name="New Task Description" id="task-desc" cols="30" rows="10"
-          class="mt-2 rounded-md block"></textarea>
-      </div>
-      <div class="mb-4 flex justify-center">
-        <label for="work-period">Work Period</label>
-        <input x-model="workPeriod" class="ml-3 rounded-md" id="task-work-time" type="text">
-      </div>
-      <div class="mb-4 flex justify-center">
-        <label for="rest-period">Rest Period</label>
-        <input x-model="restPeriod" class="ml-3 rounded-md" id="task-rest-time" type="text">
-      </div>
-      <button
-        @click="$store.pomotomo.tasks.push({ title: title, desc: desc, workPeriod: workPeriod, restPeriod: restPeriod });"
-        class="mr-5 ml-5 mb-4 mt-2 bg-pink-900 rounded-md px-4 py-2 text-xl font-semibold text-gray-50">
-        CREATE NEW TASK
-      </button>
-    </div>
-  </div>
   <div class="flex justify-center bg-blue-300 p-10">
     <div :class="{ 'bg-yellow-300': time.working, 'bg-pink-300': !time.working }"
       class="h-64 w-64 flex flex-col justify-center items-center rounded-full">
       <span class="text-5xl p-10">
-        <span x-text="$store.pomotomo.time.secs % 60 === 0 ? $store.pomotomo.currentTask.workPeriod - Math.floor($store.pomotomo.time.secs / 60) : $store.pomotomo.currentTask.workPeriod - Math.floor($store.pomotomo.time.secs / 60) - 1"></span> : <span
-          x-text="(60 - ($store.pomotomo.time.secs % 60)) % 60"></span>
+        <span
+          x-text="$store.pomotomo.time.secs % 60 === 0 ? $store.pomotomo.getCurrentTask().workPeriod - Math.floor($store.pomotomo.time.secs / 60) : $store.pomotomo.getCurrentTask().workPeriod - Math.floor($store.pomotomo.time.secs / 60) - 1"></span>
+        : <span x-text="(60 - ($store.pomotomo.time.secs % 60)) % 60"></span>
       </span>
     </div>
   </div>
@@ -71,20 +46,58 @@
         class="mr-5 ml-5 bg-purple-700 rounded-md px-4 py-2 text-xl font-semibold text-gray-50">Restart</button>
     </div>
   </div>
+  <div x-data="{ title: null, desc: null, workPeriod: 0, restPeriod: 0 }" class="flex justify-center bg-indigo-200">
+    <div class="flex flex-col">
+      <div class="mt-4 mb-4">
+        <label class="block text-base font-medium text-gray-700" for="task-title">Title</label>
+        <input x-model="title"
+          class="mt-1 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+          id="task-title" type="text">
+      </div>
+      <div class="mb-4">
+        <label class="block text-base font-medium text-gray-700" for="task-desc">Description</label>
+        <textarea x-model="desc" name="New Task Description" id="task-desc" cols="30" rows="10"
+          class="mt-1 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"></textarea>
+      </div>
+      <div class="mb-4">
+        <label class="block text-base font-medium text-gray-700" for="work-period">Work Period</label>
+        <input x-model="workPeriod"
+          class="mt-1 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+          id="task-work-time" type="text">
+      </div>
+      <div class="mb-4">
+        <label class="block text-base font-medium text-gray-700" for="rest-period">Rest Period</label>
+        <input x-model="restPeriod"
+          class="mt-1 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+          id="task-rest-time" type="text">
+      </div>
+      <button
+        @click="$store.pomotomo.tasks.push({ title: title, desc: desc, workPeriod: workPeriod, restPeriod: restPeriod });"
+        class="mr-5 ml-5 mb-4 mt-2 bg-pink-900 rounded-md px-4 py-2 text-xl font-semibold text-gray-50">
+        CREATE NEW TASK
+      </button>
+    </div>
+  </div>
   <div class="flex flex-col md:grid md:grid-cols-3">
     <div class="mx-5 mt-10 mb-10">
       <h1 class="flex justify-center text-3xl">
         Todo
       </h1>
-      <ul class="flex flex-col justify-center">
+      <ul @drop="" id="todo-column" class="flex flex-col justify-center">
         <template x-for="(task, index) in $store.pomotomo.tasks" :key="task">
-          <li class="flex justify-center mt-5">
-            <div :class="{ 'border-8 border-green-500 border-dashed': index === 0 }" class="rounded-md p-4 bg-red-400">
-              <h1 x-text="task.title" class="font-semibold">
-              </h1>
-              <p x-text="task.desc" class="mt-2">
-              </p>
-            </div>
+          <li>
+            <template>
+              <li x-if="task.status === 'todo'" class="flex justify-center mt-5" draggable="true"
+                @dragstart="$store.pomotomo.draggedTask = $store.pomotomo.tasks[index]">
+                <div :class="{ 'border-8 border-green-500 border-dashed': index === 0 }"
+                  class="flex flex-grow flex-col rounded-md p-4 bg-red-400">
+                  <h1 x-text="task.title" class="font-semibold">
+                  </h1>
+                  <p x-text="task.desc" class="mt-2">
+                  </p>
+                </div>
+              </li>
+            </template>
           </li>
         </template>
       </ul>
@@ -93,18 +106,18 @@
       <h1 class="flex justify-center text-3xl">
         Current
       </h1>
-      <div class="mt-5 bg-indigo-400 p-4 rounded-md">
-        <p class="font-semibold" x-text="$store.pomotomo.currentTask.title"></p>
-        <p class="mt-2" x-text="$store.pomotomo.currentTask.desc"></p>
+      <div id="id-card" draggable="true" class="mt-5 bg-indigo-400 p-4 rounded-md">
+        <p class="font-semibold" x-text="$store.pomotomo.getCurrentTask().title"></p>
+        <p class="mt-2" x-text="$store.pomotomo.getCurrentTask().desc"></p>
       </div>
     </div>
     <div class="mx-5 mt-10 mb-10">
       <h1 class="flex justify-center text-3xl">
         Done
       </h1>
-      <ul class="flex flex-col justify-center">
-        <template x-for="task in $store.pomotomo.done" :key="task">
-          <li class="flex justify-center mt-5">
+      <ul id="done-column" class="flex flex-col justify-center" @drop="$store.pomotomo.doneDragDrop">
+        <template x-for="(task, index) in $store.pomotomo.done" :key="task">
+          <li x-bind:id="'done-card-' + index" class="flex justify-center mt-5" draggable="true">
             <div class="rounded-md p-4 bg-yellow-700">
               <h1 x-text="task.title" class="font-semibold">
               </h1>
@@ -149,35 +162,39 @@
       user: {
         email: ""
       },
-      currentTask: {
-        title: 'All tasks have titles'
-        , desc: 'Some tasks have descriptions. The default work period is 30 minutes. The default rest period is 10 minutes.'
-        , workPeriod: 1
-        , restPeriod: 1
-      },
       tasks: [
         {
           title: 'Delete a task by clicking the x'
-          , desc: ''
+          , desc: 'Hello blah blah'
           , workPeriod: 1
           , restPeriod: 1
+          , status: 'current'
         },
         {
           title: 'You can create new tasks above'
           , desc: 'What are you doing? How long do you want to work and how long do you want to rest after?'
           , workPeriod: 1
           , restPeriod: 1
+          , status: 'todo'
         },
         {
           title: 'Move a task up by using the up and down arrows'
           , desc: 'The current task is at the top and cannot be swapped out while it is running'
           , workPeriod: 1
           , restPeriod: 1
+          , status: 'todo'
         }
       ],
-      done: [
-
-      ],
+      getCurrentTask: function () {
+        var curr = null;
+        for (i = 0; i < this.tasks.length; i++) {
+          if (this.tasks[i].status === 'current') {
+            curr = this.tasks[i];
+          }
+        }
+        return curr;
+      },
+      draggedTask: null,
       time: {
         working: true,
         secs: 0
@@ -231,14 +248,13 @@
       console.log(pomotomo.time.working);
       if (e.data === 'tick') {
         pomotomo.time.secs++;
-        if (pomotomo.time.working && (pomotomo.time.secs / 60) === pomotomo.currentTask.workPeriod) {
+        if (pomotomo.time.working && (pomotomo.time.secs / 60) === pomotomo.getCurrentTask().workPeriod) {
           pomotomo.time.working = false;
           pomotomo.time.secs = 0;
           console.log('finished work');
-        } else if (!pomotomo.time.working && (pomotomo.time.secs / 60) === pomotomo.currentTask.restPeriod) {
+        } else if (!pomotomo.time.working && (pomotomo.time.secs / 60) === pomotomo.getCurrentTask().restPeriod) {
           pomotomo.time.working = true;
-          pomotomo.done.unshift(pomotomo.currentTask);
-          pomotomo.currentTask = pomotomo.tasks.shift();
+          pomotome.getCurrentTask().status = 'done';
           pomotomo.time.secs = 0;
           console.log('finished rest');
         }

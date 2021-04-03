@@ -4,13 +4,13 @@ Pomotomo is an example pomodoro app for displaying the features of Alpine.js and
 
 ## Features
 
-In Pomodoro, *tasks* are the base unit of data. A task is a data object that has a title, a description of the task, the length of the work periods (in munutes) for the task, and the length of the rest periods (in minutes) for the task.
+In Pomodoro, *tasks* are the base unit of data. A task is a data object that has a title, a description of the task, the length of the work periods (in minutes) for the task, and the length of the rest periods (in minutes) for the task. A task may take any number of work and rest periods to complete.
 
 A task in one of three possible states at any given time:
 
 1. Todo
 
-  Tasks that are to be done go here. You can rearrange the order of tasks here using the arrow buttons. The todo task at the top will be the next *current* task, once the current task is complete.
+  Tasks that are to be done go here. You can rearrange the order of tasks here using drag-and-drop.
 
 2. Current
 
